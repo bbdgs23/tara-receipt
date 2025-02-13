@@ -6,7 +6,8 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY main.py .
-COPY .env .
+# .env 파일이 존재하면 복사하고, 없으면 무시
+COPY .env* ./
 
 EXPOSE 5000
 
