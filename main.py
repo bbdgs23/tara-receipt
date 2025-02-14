@@ -71,7 +71,7 @@ async def ocr_endpoint(file: UploadFile = File(...)):
                 ocr_api_url,
                 json=request_body,
                 headers={
-                    "Content-Type": "multipart/form-data",
+                    "Content-Type": "application/json",
                     "X-OCR-SECRET": secret_key
                 }
             )
