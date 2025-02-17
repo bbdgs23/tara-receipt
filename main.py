@@ -85,6 +85,6 @@ async def ocr_endpoint(file: UploadFile = File(...)):
             status_code=500,
             detail=f"서버 오류 발생: {str(e)}"
         )
-if name == "main":
+if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=5000)
