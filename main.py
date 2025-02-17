@@ -20,23 +20,29 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:5173",    # Vite 개발 서버
-        "https://i12c201.duckdns.org/",  # 프로덕션 환경
+        "https://i12c201.duckdns.org",  # 프로덕션 환경 (슬래시 제거)
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-@app.post("/ocr")
+@app.post("/api/ocr")  # 엔드포인트 경로를 /api/ocr로 변경
 async def ocr_endpoint(file: UploadFile = File(...)):
-    # 파일이 업로드되지 않은 경우
-    if not file:
-        raise HTTPException(status_code=400, detail="파일이 업로드되지 않았습니다.")
+    # 파일 유효성 검사 강화
+    allowed_types = ['image/jpeg', 'image/png', 'image/jpg']
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="지원되지 않는 파일 형식입니다.")
+    
+    # 파일 크기 제한 (예: 5MB)
+    max_file_size = 5 * 1024 * 1024  # 5MB
+    file_contents = await file.read()
+    if len(file_contents) > max_file_size:
+        raise HTTPException(status_code=400, detail="파일 크기가 너무 큽니다. 5MB 이하의 파일만 허용됩니다.")
     
     try:
         # 파일 읽기
-        contents = await file.read()
-        base64_image = base64.b64encode(contents).decode('utf-8')
+        base64_image = base64.b64encode(file_contents).decode('utf-8')
         
         # 파일 형식 추출
         file_format = file.content_type.split("/")[1]
@@ -49,7 +55,7 @@ async def ocr_endpoint(file: UploadFile = File(...)):
             "images": [
                 {
                     "format": file_format,
-                    "name": "receipt_test",
+                    "name": file.filename or "receipt_test",
                     "data": base64_image
                 }
             ]
@@ -73,22 +79,22 @@ async def ocr_endpoint(file: UploadFile = File(...)):
                 headers={
                     "Content-Type": "application/json",
                     "X-OCR-SECRET": secret_key
-                }
+                },
+                timeout=30.0  # 타임아웃 설정 추가
             )
             
             response.raise_for_status()
             return response.json()
         
-            
     except httpx.HTTPError as http_err:
         raise HTTPException(
             status_code=500,
-            detail=f"OCR 요청 중 오류 발생: {str(http_err)}"
+            detail=f"OCR 요청 중 네트워크 오류 발생: {str(http_err)}"
         )
     except Exception as e:
         raise HTTPException(
             status_code=500,
-            detail=f"서버 오류 발생: {str(e)}"
+            detail=f"서버 내부 오류 발생: {str(e)}"
         )
 
 if __name__ == "__main__":
