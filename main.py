@@ -17,7 +17,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:5173",    # Vite 개발 서버
-        "https://i12c201.duckdns.org/",  # 프로덕션 환경
+        "https://i12c201.duckdns.org",  # 프로덕션 환경
     ],
     allow_credentials=True,
     allow_methods=[""],
